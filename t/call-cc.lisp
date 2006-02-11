@@ -354,6 +354,33 @@
                (throw-something t)
                nil)))))
 
+(test multiple-value-call
+  (with-call/cc
+    (is (= 1 (multiple-value-call
+                 #'identity
+               (values 1)))))
+  (with-call/cc
+    (is (= 3 (length (multiple-value-call
+                         #'list
+                       (values 1)
+                       (values 1)
+                       (values 1))))))
+
+  (with-call/cc
+    (is (= 3 (multiple-value-call
+                 (lambda (a b)
+                   (+ a b))
+               (values 1 2)))))
+
+  (with-call/cc
+    (is (= 3 (multiple-value-call
+                 (lambda (&rest numbers)
+                   (reduce #'+ numbers))
+               (values -1 1)
+               (values 1)
+               (values -1)
+               (values 1 2))))))
+
 ;; speical variable handling
 (defun/cc lookup-special-in-defun/cc (stop)
   (declare (special var))
