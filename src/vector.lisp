@@ -47,6 +47,19 @@ of ARRAY."
 	      #'code-char
 	      working-array)))
 
+
+(defun vector-binary-search (vector item &optional (test #'<))
+  
+  (loop with start = 0 
+	with end = (length vector)
+	while (< start end)
+	for mid-index = (+ start (floor (- end start) 2))
+	for mid-item = (aref vector mid-index)
+	if (funcall test mid-item item) do (setf start (1+ mid-index))
+	else if (funcall test item mid-item) do (setf end mid-index)
+	else do (return mid-item)
+	finally (return nil)))
+
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
 ;; All rights reserved. 
 ;; 
