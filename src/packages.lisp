@@ -239,7 +239,7 @@
    #:append-message
    #:ancestors
    #:appenders
-   #:childer
+   #:children
    
    #:with-unique-names
    #:rebinding
