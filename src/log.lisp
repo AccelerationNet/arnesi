@@ -92,7 +92,7 @@
           (funcall setter (eval (let ((*package* #.(find-package :arnesi)))
                                   (read-from-string value-string)))))))))
 
-(defmethod swank:inspect-for-emacs ((category log-category) inspector)
+(defmethod swank:inspect-for-emacs ((category log-category))
   (let ((class (class-of category)))
     (values "A log-category."
             `("Class: " (:value ,class) (:newline)
@@ -114,7 +114,7 @@
                                        (lambda (value)
                                          (setf (log.compile-time-level category) value))))
               (:newline)
-              ,@(swank::all-slots-for-inspector category inspector)))))
+              ,@(swank::all-slots-for-inspector category)))))
 
 ;;; Runtime levels
 (defmethod enabled-p ((cat log-category) level)
