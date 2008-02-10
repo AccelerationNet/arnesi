@@ -184,8 +184,8 @@
     
     ;; first the required arguments
     (loop
-       while remaining-parameters
        for parameter = (first remaining-parameters)
+       while remaining-parameters
        do (typecase parameter
             (required-function-argument-form
              (if remaining-arguments
