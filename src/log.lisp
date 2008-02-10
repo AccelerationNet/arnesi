@@ -203,7 +203,8 @@
   `(let ((*print-right-margin* most-positive-fixnum)
          (*print-readably* nil)
          (*print-length* 64)
-         (*package* #.(find-package "COMMON-LISP")))
+         (*package* #+ecl (find-package "COMMON-LISP")
+                    #-ecl #.(find-package "COMMON-LISP")))
     ,@body))
 
 (defgeneric handle (category message level)
