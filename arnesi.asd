@@ -55,8 +55,7 @@
                              (:file "vector" :depends-on ("packages" "flow-control"))
                              (:file "walk" :depends-on ("packages" "list" "mopp" "lexenv" "one-liners")))))
   :properties ((:features "v1.4.0" "v1.4.1" "v1.4.2" "cc-interpreter"
-                          "join-strings-return-value" "getenv"))
-  :depends-on (:swank))
+                          "join-strings-return-value" "getenv")))
 
 (defsystem :arnesi.test
   :components ((:module :t
@@ -82,6 +81,10 @@
   :components ((:module :src
                 :components ((:file "cl-ppcre-extras"))))
   :depends-on (:cl-ppcre :arnesi))
+
+(defsystem :arnesi.slime-extras
+  :components ((:module :src :components ((:file "slime-extras"))))
+  :depends-on (:arnesi :swank))
 
 (defmethod perform ((op asdf:test-op) (system (eql (find-system :arnesi))))
   (asdf:oos 'asdf:load-op :arnesi.test)

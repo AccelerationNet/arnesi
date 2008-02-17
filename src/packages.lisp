@@ -224,7 +224,6 @@
    #:brief-stream-log-appender
    #:verbose-stream-log-appender
    #:make-stream-log-appender
-   #:make-slime-repl-log-appender
    #:file-log-appender
    #:make-file-log-appender
    #:deflogger
