@@ -92,7 +92,7 @@
           (funcall setter (eval (let ((*package* #.(find-package :arnesi)))
                                   (read-from-string value-string)))))))))
 
-(defmethod swank:inspect-for-emacs ((category log-category))
+(defmethod swank:emacs-inspect ((category log-category))
   (let ((class (class-of category)))
     (values "A log-category."
             `("Class: " (:value ,class) (:newline)
