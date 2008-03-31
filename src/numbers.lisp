@@ -88,18 +88,22 @@
   /
   "SETF NUM to the result of (/ NUM B).")
 
+(defun do-minf (current other)
+  (if (< other current)
+      other
+    current))
+
 (define-modify-macro minf (other)
-  (lambda (current other)
-    (if (< other current)
-        other
-        current))
+  do-minf
   "Sets the place to new-value if new-value is #'< the current value")
 
+(defun do-maxf (current other)
+  (if (> other current)
+      other
+    current))
+ 
 (define-modify-macro maxf (other)
-  (lambda (current other)
-    (if (> other current)
-        other
-        current))
+  do-maxf
   "Sets the place to new-value if new-value is #'> the current value")
 
 (defun map-range (lambda min max &optional (step 1))

@@ -91,11 +91,13 @@ Examples:
          (,traverser ,tree)
          ,ret-val))))
 
-(define-modify-macro push* (&rest items)
-  (lambda (list &rest items)
+(defun do-push* (list &rest items)
     (dolist (i items)
       (setf list (cons i list)))
     list)
+
+(define-modify-macro push* (&rest items)
+  do-push*
   "Pushes every element of ITEMS onto LIST. Equivalent to calling PUSH
   with each element of ITEMS.")
 
