@@ -133,7 +133,7 @@ the vector ALPHABET.
      ;; therefore we set the line-terminator to MS-DOS.
      ;; Of course, it would be better if this was explicitely requested...
      :line-terminator :dos
-     :input-error-action #\uFFFD
+     :input-error-action (code-char #xFFFD)
      :output-error-action #+debug :error #-debug :ignore))
   (defun %string-to-octets (string encoding)
     (ext:convert-string-to-bytes string (encoding-keyword-to-native encoding)))
