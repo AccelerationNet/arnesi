@@ -34,9 +34,19 @@
             (write-word i)))
       (write-sequence newline csv-stream))))
 
-(defun princ-csv-to-string (items)
+(defun princ-csv-to-string (items &key (quote #\")
+				  (separator #\,)
+				  (ignore-nulls t)
+				  (newline +CR-LF+)
+				  (princ #'princ-to-string))
   (with-output-to-string (csv)
-    (princ-csv items csv)))
+    (princ-csv items csv
+	       :quote quote
+	       :separator separator
+	       :ignore-nulls ignore-nulls
+	       :newline newline
+	       :princ princ
+	       )))
 
 ;;;; Reading in CSV files
 
