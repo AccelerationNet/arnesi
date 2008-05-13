@@ -6,6 +6,11 @@
 
 ;;;; ** Anaphoric conditionals
 
+(defmacro alet (val &body body)
+  "binds 'it' to the value and executes in the body in that environment"
+  `(let ((it ,val))
+    ,@body))
+
 (defmacro if-bind (var test &body then/else)
   "Anaphoric IF control structure.
 

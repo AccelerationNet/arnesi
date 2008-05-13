@@ -160,7 +160,8 @@
    #:octets-to-string
    #:encoding-keyword-to-native
    #:defprint-object
-   
+
+   #:alet
    #:if-bind
    #:aif
    #:when-bind
