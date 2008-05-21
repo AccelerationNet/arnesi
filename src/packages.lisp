@@ -204,6 +204,7 @@
    
    #:compose
    #:conjoin
+   #:append-results
    #:curry
    #:rcurry
    #:noop

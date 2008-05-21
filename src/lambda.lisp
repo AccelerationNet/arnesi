@@ -49,6 +49,17 @@
           while val
           finally (return val))))))
 
+(defun append-results (&rest fns)
+  "Accepts a list of functions and returns a function of args that applys its args to each of fns and returns a list of the results
+
+   expected usage: (mapcar (append-results #'name #'id) list-of-objs)
+  "
+  (lambda (&rest args)
+    (loop
+	for fn in fns
+	collecting (apply fn args)
+	)))
+
 (defun curry (function &rest initial-args)
   "Returns a function which will call FUNCTION passing it
   INITIAL-ARGS and then any other args.
