@@ -44,10 +44,10 @@
 ;;;; APPLY and FUNCALL
 
 (defk k-for-call/cc (k)
-    (value)
+    (value other-values)
   (if *call/cc-returns*
-      (kontinue k value)
-      (throw 'done value)))
+      (kontinue k value other-values)
+      (throw 'done (values-list (cons value other-values)) )))
 
 ;;;; apply'ing a free (global) function
 
