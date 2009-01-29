@@ -236,7 +236,19 @@
 
 (defk k-for-free-setq (var lex-env dyn-env k)
     (value)
-  (setf (symbol-value var) value)
+  (let ((exp (macroexpand var)))
+    (if (eq var exp)
+	(setf (symbol-value var) value)
+	(multiple-value-bind (dummies vals new setter getter)
+	    (get-setf-expansion var)
+
+	  (funcall 
+	   (compile nil 
+		    `(lambda () 
+		      (let* (,@(mapcar #'list dummies vals)
+			       (,(car new) ,value))
+			       (prog1 
+				 ,setter))))))))
   (kontinue k value))
 
 (defk k-for-local-lexical-setq (var lex-env dyn-env k)

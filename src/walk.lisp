@@ -125,7 +125,7 @@
   ((body :accessor body :initarg :body)))
 
 (defclass implicit-progn-with-declare-mixin (implicit-progn-mixin)
-  ((declares :accessor declares :initarg :declares)))
+  ((declares :accessor declares :initarg :declares :initform nil)))
 
 (defclass binding-form-mixin ()
   ((binds :accessor binds :initarg :binds)))
