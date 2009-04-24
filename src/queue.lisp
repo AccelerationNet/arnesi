@@ -46,6 +46,20 @@
 (defmethod peek-queue ((queue queue))
   (aref (buffer queue) (tail-index queue)))
 
+(defmethod queue-head ((queue queue))
+  "Peak at the last element inserted into the queue."
+  (unless (queue-empty-p queue)
+    (let ((idx (mod (1- (head-index queue)) (length (buffer queue)))))
+      (aref (buffer queue) idx))))
+
+(defmethod queue-pop ((queue queue) &optional (default-value nil))
+  "Pop off the front of the queue (the most recent element inserted)"
+  (if (queue-empty-p queue)
+      default-value
+      (let ((idx (decf-mod (head-index queue) (length (buffer queue)))))
+	(prog1 (aref (buffer queue) idx)
+	  (setf (aref (buffer queue) idx) nil)))))
+
 (defmethod queue-empty-p ((queue queue))
   (= (head-index queue) (tail-index queue)))
 
