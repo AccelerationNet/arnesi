@@ -74,6 +74,16 @@
     (aref buffer (mod (+ tail-index (random count))
                       (length buffer)))))
 
+(defmethod queue-delete-if ((queue queue) predicate &key (key #'identity))
+  "Destructively modifies the queue deleting elements where the predicate is true."
+  (loop repeat (queue-count queue)
+	for el = (dequeue queue)
+	do
+     (unless (funcall predicate (funcall key el))
+       (enqueue queue el)))
+  queue)
+
+
 (defmethod call-for-all-elements-with-index ((queue queue) callback)
   "Calls CALLBACK passing it each element in QUEUE. The elements
 will be called in the same order thah DEQUEUE would return them."
@@ -120,6 +130,9 @@ will be called in the same order thah DEQUEUE would return them."
 
 (defmacro incf-mod (place divisor)
   `(setf ,place (mod (1+ ,place) ,divisor)))
+
+(defmacro decf-mod (place divisor)
+  `(setf ,place (mod (1- ,place) ,divisor)))
 
 (defmethod move-tail ((queue queue))
   (incf-mod (tail-index queue) (length (buffer queue))))

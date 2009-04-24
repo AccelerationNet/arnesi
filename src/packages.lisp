@@ -311,6 +311,7 @@
    #:queue-empty-p
    #:queue-count
    #:random-queue-element
+   #:queue-delete-if
    #:queue->list
    #:lru-queue
    
