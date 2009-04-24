@@ -24,7 +24,9 @@
           "Initial size of a queue must be greater than 1.")
   (setf (head-index queue) 0
         (tail-index queue) 0
-        (buffer queue) (make-array (1+ size) :element-type element-type)))
+        (buffer queue) (make-array (1+ size)
+				   :element-type (list 'or 'null element-type)
+				   :initial-element nil)))
 
 (defmethod enqueue ((queue queue) value)
   (when (queue-full-p queue)
@@ -38,6 +40,7 @@
       default-value
       (prog1
           (aref (buffer queue) (tail-index queue))
+	(setf (aref (buffer queue) (tail-index queue)) nil)
         (move-tail queue))))
 
 (defmethod peek-queue ((queue queue))
