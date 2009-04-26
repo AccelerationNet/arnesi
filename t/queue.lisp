@@ -78,3 +78,29 @@
         (dequeue-all two)
         (dequeue-all three))
       (is (queue-empty-p q)))))
+
+(test queue-pop-basic
+  (let ((q (make-instance 'queue :size 2)))
+    (enqueue q 1)
+    (enqueue q 2)
+    (is (= 2 (queue-last q)))
+    (is (= 2 (queue-pop q)))
+    (is (= 1 (queue-pop q)))
+    (is (queue-empty-p q))
+    ))
+
+(test queue-pop-random
+  (for-all ((qlen (gen-integer :min 2 :max 25))
+	    (list (gen-list :length (gen-integer :min 2 :max 20)
+			    :elements (gen-integer :min -10 :max 10))))
+    (let ((q (make-instance 'lru-queue
+			    :size qlen
+			    :element-type 'integer)))
+      (loop for e in list do (enqueue q e))
+      (loop repeat (queue-count q)
+	    do
+	 (if (= 0 (random 2))
+	     (is (numberp (queue-pop q)))
+	     (is (numberp (dequeue q)))))
+      (is (queue-empty-p q))))
+  )

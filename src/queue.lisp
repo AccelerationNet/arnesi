@@ -46,7 +46,7 @@
 (defmethod peek-queue ((queue queue))
   (aref (buffer queue) (tail-index queue)))
 
-(defmethod queue-head ((queue queue))
+(defmethod queue-last ((queue queue))
   "Peak at the last element inserted into the queue."
   (unless (queue-empty-p queue)
     (let ((idx (mod (1- (head-index queue)) (length (buffer queue)))))

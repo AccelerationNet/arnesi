@@ -308,6 +308,8 @@
    #:enqueue
    #:dequeue
    #:peek-queue
+   #:queue-last
+   #:queue-pop
    #:queue-empty-p
    #:queue-count
    #:random-queue-element
