@@ -374,7 +374,7 @@
    #:enable-sharp-l
    #:enable-bracket-reader
    #:enable-pf-reader
-   ))
+   #:with-accessors*))
 
 ;;;; * Colophon
 
