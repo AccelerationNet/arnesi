@@ -31,6 +31,7 @@
             finally (return (values-list r))))))))
 
 (defun conjoin (&rest predicates)
+  "Combine n predicate functions into one predicate function that ensures all of them are true."
   (case (length predicates)
     (0 (constantly t))
     (1 (car predicates))
