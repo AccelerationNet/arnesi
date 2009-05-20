@@ -8,6 +8,13 @@
 ;;;; implementation. The two core operations are enqueue and dequeue,
 ;;;; the utility method queue-count is also provided.
 
+(defmacro incf-mod (place divisor)
+  `(setf ,place (mod (1+ ,place) ,divisor)))
+
+(defmacro decf-mod (place divisor)
+  `(setf ,place (mod (1- ,place) ,divisor)))
+
+
 (defclass queue ()
   ((head-index :accessor head-index)
    (tail-index :accessor tail-index)
@@ -141,12 +148,6 @@ will be called in the same order thah DEQUEUE would return them."
             (tail-index queue) 0
             (buffer queue) new-buffer))
     queue))
-
-(defmacro incf-mod (place divisor)
-  `(setf ,place (mod (1+ ,place) ,divisor)))
-
-(defmacro decf-mod (place divisor)
-  `(setf ,place (mod (1- ,place) ,divisor)))
 
 (defmethod move-tail ((queue queue))
   (incf-mod (tail-index queue) (length (buffer queue))))
