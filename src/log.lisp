@@ -278,7 +278,7 @@
   (multiple-value-bind (second minute hour date month year)
       (decode-universal-time (get-universal-time))
     (format (log-stream s)
-            "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D.~2,'0D ~S/~S: "
+            "~4,'0D-~2,'0D-~2,'0DT~2,'0D:~2,'0D.~2,'0D ~A/~A: "
             year month date hour minute second
             (name category) level)
     (format (log-stream s) "~A~%" message)))
