@@ -6,7 +6,7 @@
 
 (defun compose (f1 &rest functions)
   "Returns a function which applies the arguments in order.
-
+(compose f1 f2) => (lambda (x) (f1 (f2 x)) )
  (funcall (compose #'list #'+) 1 2 3) ==> (6)"
   (case (length functions)
     (0 f1)
