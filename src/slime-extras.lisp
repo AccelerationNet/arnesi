@@ -47,10 +47,10 @@ You may want to add this to your init.el to speed up cursor movement in the repl
     (swank::with-connection ((swank::default-connection))
       (multiple-value-bind (second minute hour day month year)
           (decode-universal-time (get-universal-time))
-        (declare (ignore second day month year))
+        (declare (ignore day month year))
         (swank::present-in-emacs (format nil
-                                         "~2,'0D:~2,'0D ~A/~A: "
-                                         hour minute
+                                         "~2,'0D:~2,'0D:~2,'0D ~A/~9A: "
+                                         hour minute second
                                          (symbol-name (name category))
                                          (symbol-name level))))
       (if (consp message)
