@@ -66,9 +66,11 @@
 
 (defmethod print-object ((category log-category) stream)
   (print-unreadable-object (category stream :type t :identity t)
-    (if (slot-boundp category 'name)
-        (format stream "~S" (name category))
-        (format stream "#<NO NAME>"))))
+    (format stream "~S ~a"
+	    (if (slot-boundp category 'name)
+		(name category)
+		"#<NO NAME>")
+	    (level category))))
 
 (defmethod shared-initialize :after ((l log-category) slot-names
                                      &key ancestors &allow-other-keys)
