@@ -179,13 +179,15 @@
     (call-next-method)))
 
 (defmethod handle ((cat log-category) message level)
-  (if (appenders cat)
-      ;; if we have any appenders send them the message
-      (dolist (appender (appenders cat))
-	(append-message cat appender message level))
-      ;; send the message to our ancestors
-      (dolist (ancestor (ancestors cat))
-	(handle ancestor message level))))
+  (labels ((do-appenders (ac)
+	     ;; if we have any appenders send them the message
+	     (awhen (appenders ac)
+	       (dolist (appender it)
+		 (append-message cat appender message level)))
+
+	     ;; send the message to our ancestors	     
+	     (mapc #'do-appenders (ancestors ac))))
+    (do-appenders cat)))
 
 (defgeneric append-message (category log-appender message level)
   (:method :around (category log-appender message level)
