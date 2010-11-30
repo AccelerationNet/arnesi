@@ -22,8 +22,10 @@
 (defun escape-as-uri (string)
   "Escapes all non alphanumeric characters in STRING following
   the URI convention. Returns a fresh string."
-  (with-output-to-string (escaped)
-    (write-as-uri string escaped)))
+  (if (null string)
+      ""
+      (with-output-to-string (escaped)
+	(write-as-uri string escaped))))
 
 (defun write-as-uri (string stream)
   (declare (type vector string)
