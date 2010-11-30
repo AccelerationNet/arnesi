@@ -84,6 +84,20 @@ current list of values."
             items)
           value))))
 
+(defun make-appender (&optional initial-value)
+  "Create an appender function.
+
+An Appender will append any arguments into a list, all the values
+passed to it in the order in which they were passed. If the
+appender function is called without arguments it returns the
+current list of values."
+  (let ((collector (make-collector initial-value)))
+    (lambda (&rest items)
+      ;; flatten one level and append lists for appender
+      (setf items (apply #'append
+		   (mapcar #'ensure-list items)))
+      (apply collector items))))
+
 (defun make-pusher (&optional initial-value)
   "Create a function which collects values as by PUSH."
   (let ((value initial-value))
@@ -95,6 +109,17 @@ current list of values."
             items)
           value))))
 
+(defmacro with-appender ((name &optional initial-value) &body body)
+  "Bind NAME to a collector function and execute BODY. If
+  FROM-END is true the collector will actually be a pusher, (see
+  MAKE-PUSHER), otherwise NAME will be bound to a collector,
+  (see MAKE-COLLECTOR)."
+  (with-unique-names (appender)
+    `(let ((,appender (make-appender ,initial-value)))
+       (flet ((,name (&rest items)
+		(apply ,appender items)))
+         ,@body))))
+
 (defmacro with-collector ((name &optional initial-value from-end) &body body)
   "Bind NAME to a collector function and execute BODY. If
   FROM-END is true the collector will actually be a pusher, (see
@@ -105,10 +130,7 @@ current list of values."
                             `(make-pusher ,initial-value)
                             `(make-collector ,initial-value))))
        (flet ((,name (&rest items)
-                (if items
-                    (dolist (i items)
-                      (funcall ,collector i))
-                    (funcall ,collector))))
+		(apply ,collector items)))
          ,@body))))
 
 (defmacro with-collectors (names &body body)

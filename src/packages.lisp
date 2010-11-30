@@ -21,9 +21,11 @@
    #:make-reducer
    #:make-pusher
    #:make-collector
+   #:make-appender
    #:with-reducer
    #:with-collector
    #:with-collectors
+   #:with-appender
 
    #:form
    #:walk-form
