@@ -11,8 +11,7 @@
 (defsystem :arnesi
   :components ((:static-file "arnesi.asd")
                (:module :src
-                :components ((:file "accumulation" :depends-on ("packages" "one-liners"))
-                             (:file "asdf" :depends-on ("packages" "io"))
+                :components ((:file "asdf" :depends-on ("packages" "io"))
                              (:file "csv" :depends-on ("packages" "string"))
                              (:file "compat" :depends-on ("packages"))
                              (:module :call-cc
@@ -23,7 +22,7 @@
                                            (:file "common-lisp-cc"))
                               :serial t
                               :depends-on ("packages" "walk" "flow-control" "lambda-list" "list" "string" "defclass-struct"))
-			     (:file "debug" :depends-on ("accumulation"))
+			     (:file "debug" :depends-on ())
                              (:file "decimal-arithmetic" :depends-on ("packages"))
                              (:file "defclass-struct" :depends-on ("packages" "list"))
                              (:file "flow-control" :depends-on ("packages" "one-liners"))
@@ -34,7 +33,7 @@
 			     (:file "lambda-list" :depends-on ("packages" "walk"))
 			     (:file "lisp1" :depends-on ("packages" "lambda-list" "one-liners" "walk" "unwalk"))
                              (:file "lexenv" :depends-on ("packages" "one-liners"))
-                             (:file "list" :depends-on ("packages" "one-liners" "accumulation" "flow-control"))
+                             (:file "list" :depends-on ("packages" "one-liners" "flow-control"))
                              (:file "log" :depends-on ("packages" "numbers" "hash" "io"))
                              (:file "matcher" :depends-on ("packages" "hash" "list" "flow-control" "one-liners"))
                              (:file "mop" :depends-on ("packages" "mopp"))
@@ -54,13 +53,13 @@
 			     (:file "unwalk" :depends-on ("packages" "walk"))
                              (:file "vector" :depends-on ("packages" "flow-control"))
                              (:file "walk" :depends-on ("packages" "list" "mopp" "lexenv" "one-liners")))))
+  :depends-on (:collectors)
   :properties ((:features "v1.4.0" "v1.4.1" "v1.4.2" "cc-interpreter"
                           "join-strings-return-value" "getenv")))
 
 (defsystem :arnesi.test
   :components ((:module :t
-		:components ((:file "accumulation" :depends-on ("suite"))
-                             (:file "call-cc" :depends-on ("suite"))
+		:components ((:file "call-cc" :depends-on ("suite"))
                              (:file "http" :depends-on ("suite"))
                              (:file "log" :depends-on ("suite"))
                              (:file "matcher" :depends-on ("suite"))
@@ -88,6 +87,7 @@
 
 (defmethod perform ((op asdf:test-op) (system (eql (find-system :arnesi))))
   (asdf:oos 'asdf:load-op :arnesi.test)
+  (asdf:oos 'asdf:load-op :collectors)
   (funcall (intern (string :run!) (string :it.bese.FiveAM))
            :it.bese.arnesi))
 

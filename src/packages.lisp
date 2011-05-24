@@ -12,7 +12,7 @@
 (defpackage :it.bese.arnesi
   (:documentation "The arnesi utility suite.")
   (:nicknames :arnesi)
-  (:use :common-lisp)
+  (:use :common-lisp :collectors)
   (:export
 
    #:clean-op
