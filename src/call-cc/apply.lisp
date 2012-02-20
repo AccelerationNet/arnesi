@@ -26,14 +26,13 @@
 #+sbcl
 (defmethod initialize-instance :after ((fun closure/cc) &rest initargs)
   (declare (ignore initargs))
-  (mopp:set-funcallable-instance-function 
-   fun 
-   #'(lambda (&rest args)
-       (drive-interpreter/cc 
-	(apply-lambda/cc fun
-			 args
-                         '()
-			 *toplevel-k*)))))
+  (mopp:set-funcallable-instance-function fun
+                                          (lambda (&rest args)
+                                            (drive-interpreter/cc
+                                             (apply-lambda/cc fun
+                                                              args
+                                                              '()
+                                                              *toplevel-k*)))))
 
 ;;;; LAMBDA
 
@@ -47,12 +46,12 @@
     (value other-values)
   (if *call/cc-returns*
       (kontinue k value other-values)
-      (throw 'done (values-list (cons value other-values)) )))
+      (throw 'done (values-list (cons value other-values)))))
 
 ;;;; apply'ing a free (global) function
 
 (defmethod evaluate/cc ((func free-application-form) lex-env dyn-env k)
-  (cond 
+  (cond
     ((eql 'call/cc (operator func))
      (evaluate/cc (make-instance 'free-application-form
                                   :operator 'funcall
@@ -60,64 +59,65 @@
                                                    (make-instance 'constant-form :value k :source k))
                                   :source (source func))
                   lex-env dyn-env `(k-for-call/cc ,k)))
-    
+
     ((eql 'kall (operator func))
-     (evaluate-arguments-then-apply
-      (lambda (arguments)
-        (trace-statement "KALL'ing ~S on ~S" (first arguments) (rest arguments))
-        (apply #'kontinue (first arguments) (cdr arguments)))
-      (arguments func) '()
-      lex-env dyn-env))
+     (evaluate-arguments-then-apply (lambda (arguments)
+                                      (trace-statement "KALL'ing ~S on ~S"
+                                                       (first arguments) (rest arguments))
+                                      (apply #'kontinue (first arguments) (cdr arguments)))
+                                    (arguments func) '()
+                                    lex-env dyn-env))
 
     ((and (eql 'call-next-method (operator func))
-	  (second (multiple-value-list (lookup lex-env :next-method t))))
+          (second (multiple-value-list (lookup lex-env :next-method t))))
      (aif (lookup lex-env :next-method t)
-	  (evaluate-arguments-then-apply
-	   (lambda (arguments)
-	     (apply-lambda/cc it arguments dyn-env k))
-	   (arguments func) '() lex-env dyn-env)
-	  (error "no next method")))
+          (evaluate-arguments-then-apply (lambda (arguments)
+                                           (apply-lambda/cc it arguments dyn-env k))
+                                         (arguments func) '() lex-env dyn-env)
+          (error "no next method")))
 
     ((and (eql 'next-method-p (operator func))
-	  (second (multiple-value-list (lookup lex-env :next-method t))))
+          (second (multiple-value-list (lookup lex-env :next-method t))))
      (kontinue k (lookup lex-env :next-method t)))
-    
+
     ((eql 'funcall (operator func))
      (evaluate-funcall/cc (arguments func) lex-env dyn-env k))
-    
+
     ((eql 'apply (operator func))
      (evaluate-apply/cc (arguments func) '() lex-env dyn-env k))
-    
+
     ((and (symbolp (operator func))
           (eql 'defun/cc (nth-value 1 (fdefinition/cc (operator func)))))
-     (evaluate-arguments-then-apply
-      (lambda (arguments)
-        (trace-statement "Calling cc function ~S with arguments ~S" (operator func) arguments)
-        (apply-lambda/cc (fdefinition/cc (operator func)) arguments dyn-env k))
-      (arguments func) '()
-      lex-env dyn-env))
-    
+     (evaluate-arguments-then-apply (lambda (arguments)
+                                      (trace-statement "Calling cc function ~S with arguments ~S"
+                                                       (operator func) arguments)
+                                      (apply-lambda/cc (fdefinition/cc (operator func))
+                                                       arguments dyn-env k))
+                                    (arguments func) '()
+                                    lex-env dyn-env))
+
     ((and (symbolp (operator func))
           (eql 'defmethod/cc (nth-value 1 (fdefinition/cc (operator func)))))
-     (evaluate-arguments-then-apply
-      (lambda (arguments)
-        (trace-statement "Calling cc method ~S with arguments ~S" (operator func) arguments)
-        (apply-lambda/cc (apply (operator func) arguments) arguments dyn-env k))
-      (arguments func) '()
-      lex-env dyn-env))
-       
+     (evaluate-arguments-then-apply (lambda (arguments)
+                                      (trace-statement "Calling cc method ~S with arguments ~S"
+                                                       (operator func) arguments)
+                                      (apply-lambda/cc (apply (operator func) arguments)
+                                                       arguments dyn-env k))
+                                    (arguments func) '()
+                                    lex-env dyn-env))
+
     (t
-     (evaluate-arguments-then-apply
-      (lambda (arguments)
-        (multiple-value-bind (vars vals)
-            (export-specials dyn-env)
-          (progv vars vals
-            (trace-statement "Calling function ~S with arguments ~S"
-                             (operator func) arguments)
-            (apply #'kontinue k (multiple-value-list
-                                    (apply (fdefinition (operator func)) arguments))))))
-      (arguments func) '()
-      lex-env dyn-env))))
+     (evaluate-arguments-then-apply (lambda (arguments)
+                                      (multiple-value-bind (vars vals)
+                                          (export-specials dyn-env)
+                                        (progv vars vals
+                                          (trace-statement "Calling function ~S with arguments ~S"
+                                                           (operator func) arguments)
+                                          (apply #'kontinue k (multiple-value-list
+                                                               (apply (fdefinition (operator func))
+                                                                      arguments))))))
+                                    (arguments func) '()
+                                    lex-env dyn-env))))
 
 ;; returns a list of variables and values from the dynamic environment that should be exported
 ;; these variables will be visible in normal lisp code that is called from cc code
@@ -133,11 +133,12 @@
 ;;;; apply'ing a local function
 
 (defmethod evaluate/cc ((func local-application-form) lex-env dyn-env k)
-  (evaluate-arguments-then-apply
-   (lambda (arguments)
-     (apply-lambda/cc (lookup lex-env :flet (operator func) :error-p t) arguments dyn-env k))
-   (arguments func) '()
-   lex-env dyn-env))
+  (evaluate-arguments-then-apply (lambda (arguments)
+                                   (apply-lambda/cc (lookup lex-env :flet (operator func)
+                                                            :error-p t)
+                                                    arguments dyn-env k))
+                                 (arguments func) '()
+                                 lex-env dyn-env))
 
 ;;;; apply'ing a lambda
 
@@ -181,7 +182,7 @@
     ;; function. PARAMETER refers to the lambda of the closure
     ;; object. we walk down the parameters and put the arguments in
     ;; the environment under the proper names.
-    
+
     ;; first the required arguments
     (loop
        for parameter = (first remaining-parameters)
@@ -212,8 +213,8 @@
               operator remaining-parameters remaining-arguments lex-env dyn-env k))))
     (loop
        for head on remaining-parameters
-       for parameter = (first head) 
-       do 
+       for parameter = (first head)
+       do
        (etypecase parameter
          (rest-function-argument-form
           (setf lex-env (register lex-env :let (name parameter) remaining-arguments)))
@@ -241,21 +242,21 @@
 (defk k-for-apply/cc/optional-argument-default-value
     (operator remaining-parameters lex-env dyn-env k)
     (value)
-  (apply-lambda/cc/optional
-   operator (cdr remaining-parameters)
-   ;; nb: if we're evaluating the default value of an optional
-   ;; arguments then we can't have anything left in the arguments
-   ;; list.
-   nil
-   (register lex-env :let (name (first remaining-parameters)) value)
-   dyn-env
-   k))
+  (apply-lambda/cc/optional operator
+                            (cdr remaining-parameters)
+                            ;; nb: if we're evaluating the default value of an optional
+                            ;; arguments then we can't have anything left in the arguments
+                            ;; list.
+                            nil
+                            (register lex-env :let (name (first remaining-parameters)) value)
+                            dyn-env
+                            k))
 
 (defun apply-lambda/cc/keyword (operator remaining-parameters remaining-arguments lex-env dyn-env k)
   ;; now any keyword parameters
   (loop
      for head on remaining-parameters
-     for parameter = (first head) 
+     for parameter = (first head)
      do (typecase parameter
           (keyword-function-argument-form
            (assert (evenp (length remaining-arguments))
@@ -309,14 +310,15 @@
 
 ;;;; Small helper function
 
-(defk k-for-evaluate-arguments-then-apply (handler remaining-arguments evaluated-arguments lex-env dyn-env)
+(defk k-for-evaluate-arguments-then-apply (handler remaining-arguments evaluated-arguments
+                                           lex-env dyn-env)
     (value)
-  (evaluate-arguments-then-apply
-   handler
-   remaining-arguments (cons value evaluated-arguments)
-   lex-env dyn-env))
+  (evaluate-arguments-then-apply handler
+                                 remaining-arguments (cons value evaluated-arguments)
+                                 lex-env dyn-env))
 
-(defun evaluate-arguments-then-apply (handler remaining-arguments evaluated-arguments lex-env dyn-env)
+(defun evaluate-arguments-then-apply (handler remaining-arguments evaluated-arguments
+                                      lex-env dyn-env)
   (if remaining-arguments
       (evaluate/cc (car remaining-arguments) lex-env dyn-env
                     `(k-for-evaluate-arguments-then-apply ,handler ,(cdr remaining-arguments)
@@ -324,15 +326,15 @@
       (funcall handler (reverse evaluated-arguments))))
 
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -340,7 +342,7 @@
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

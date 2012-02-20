@@ -80,8 +80,8 @@ are discarded \(that is, the body is an implicit PROGN)."
   "Just like WITH-ACCESSORS, but if the slot-entry is a symbol
   assume the variable and accessor name are the same."
   `(with-accessors ,(mapcar (lambda (name)
-			      (if (consp name) 
-				  name 
+			      (if (consp name)
+				  name
 				  `(,name ,name)))
 			    accessor-names)
        ,object
@@ -105,15 +105,13 @@ are discarded \(that is, the body is an implicit PROGN)."
   `(setf ,environment (register ,environment ,type ,name ,datum ,@other-datum)))
 
 (defun lookup (environment type name &key (error-p nil) (default-value nil))
-  (loop
-     for (.type .name . data) in environment
-     when (and (eql .type type) (eql .name name))
-       return (values data t)
-     finally
-       (if error-p
-           (error "Sorry, No value for ~S of type ~S in environment ~S found."
-                  name type environment)
-           (values default-value nil))))
+  (loop :for (.type .name . data) :in environment :do
+    (when (and (eql .type type) (eql .name name))
+      (return-from lookup (values data t))))
+  (if error-p
+      (error "Sorry, No value for ~S of type ~S in environment ~S found."
+             name type environment)
+      (values default-value nil)))
 
 (defun (setf lookup) (value environment type name &key (error-p nil))
   (loop
@@ -197,15 +195,15 @@ are discarded \(that is, the body is an implicit PROGN)."
 
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
 ;; Copyright (c) 2006,      Hoan Ton-That
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -214,7 +212,7 @@ are discarded \(that is, the body is an implicit PROGN)."
 ;;    BESE, nor the names of its contributors may be used to endorse
 ;;    or promote products derived from this software without specific
 ;;    prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

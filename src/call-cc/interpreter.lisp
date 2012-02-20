@@ -14,7 +14,7 @@
 ;;;; represent continuations as regular lists which, when the cdr
 ;;;; (which must be clos objects or literals) is applied to the car
 ;;;; (which must be a symbol) the actual contiunation (a regular
-;;;; common lisp function) is returned. 
+;;;; common lisp function) is returned.
 
 (defvar *call/cc-returns* nil)
 
@@ -30,7 +30,7 @@
   function KALL which will cause execution to resume around the
   call/cc form. "
   (let ((walk-env (make-walk-env e))
-        (evaluate-env nil))
+        evaluate-env)
     (dolist* ((type name &rest data) (car walk-env))
       (declare (ignore data))
       (when (eql :lexical-let type)
@@ -47,12 +47,13 @@
               evaluate-env)))
     (setf evaluate-env `(list ,@(nreverse evaluate-env)))
     `(drive-interpreter/cc
-      (evaluate/cc ,(walk-form (if (rest body)
-                                   `(progn ,@body)
-                                   (first body))
-                               nil walk-env)
-                   ,evaluate-env nil
-                   *toplevel-k*))))
+      (evaluate/cc
+       ,(walk-form (if (rest body)
+                       `(progn ,@body)
+                       (first body))
+                   nil walk-env)
+       ,evaluate-env nil
+       *toplevel-k*))))
 
 (defun kall (k &optional (primary-value nil primary-value-p)
                &rest other-values)
@@ -176,15 +177,15 @@ evaluating and what it returns.")
 (defparameter *toplevel-k* '(toplevel-k))
 
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -192,7 +193,7 @@ evaluating and what it returns.")
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

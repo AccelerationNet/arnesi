@@ -49,7 +49,7 @@ lambda needs to accept N arguments but only uses N - 1. Example:
 
 #2L(foo !1) ==> (lambda (!1 !2) (declare (ignore !2)) (foo !1))
 
-When #l forms are nested, !X variables are bound to the innermost 
+When #l forms are nested, !X variables are bound to the innermost
 form. Example:
 
 #l#l(+ !1 !2)
@@ -87,28 +87,25 @@ This function overrides (and forgets) and previous value of #L."
 
 (defun find-var-references (input-form)
   (typecase input-form
-    (cons 
-      (append (find-var-references (car input-form))
-	      (find-var-references (cdr input-form))))
-
+    (cons (append (find-var-references (car input-form))
+                  (find-var-references (cdr input-form))))
     (free-variable-reference (list (slot-value input-form 'name)))
     (local-lexical-variable-reference (list (slot-value input-form 'name)))
-      
-    (form
-     (loop for slot-name in (mapcar #'mopp:slot-definition-name 
-				    (mopp::class-slots (class-of input-form)))
-	   if (not (member slot-name '(parent target-progn enclosing-tagbody target-block)))
-	   append (find-var-references (slot-value input-form slot-name))))
-
+    (form (loop :for slot-name :in
+               (mapcar #'mopp:slot-definition-name
+                       (mopp::class-slots (class-of input-form)))
+             :unless (member slot-name '(parent target-progn
+                                         enclosing-tagbody target-block))
+             :append (find-var-references (slot-value input-form slot-name))))
     (t nil)))
 
 (defun highest-bang-var (form env)
   (let ((*warn-undefined* nil))
-    (or
-     (loop for var in (find-var-references (walk-form form nil (make-walk-env env)))
-	   if (bang-var-p var)
-	   maximize (bang-var-p var))
-     0)))
+    (or (loop :for var :in (find-var-references
+                            (walk-form form nil (make-walk-env env)))
+           :if (bang-var-p var)
+           :maximize (bang-var-p var))
+        0)))
 
 (defun bang-var-p (form)
   (and (char= #\! (aref (symbol-name form) 0))
@@ -118,15 +115,15 @@ This function overrides (and forgets) and previous value of #L."
   (intern (format nil "!~D" number) package))
 
 ;; Copyright (c) 2002-2006, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -134,7 +131,7 @@ This function overrides (and forgets) and previous value of #L."
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

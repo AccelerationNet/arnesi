@@ -15,27 +15,30 @@
   (funcall (find-walker-handler form) form parent env))
 
 (defun make-walk-env (&optional lexical-env)
-  (let ((walk-env '()))
+  (let (walk-env)
     (when lexical-env
       (dolist (var (lexical-variables lexical-env))
         (extend walk-env :lexical-let var t))
+      ;; (dolist (var (lexical-variables lexical-env))
+      ;;   (extend walk-env :lexical-let var t))
       (dolist (fun (lexical-functions lexical-env))
-	(extend walk-env :lexical-flet fun t))
+        (extend walk-env :lexical-flet fun t))
       (dolist (mac (lexical-macros lexical-env))
-	(extend walk-env :macrolet (car mac) (cdr mac)))
-      (dolist (symmac (lexical-symbol-macros lexical-env))
-	(extend walk-env :symbol-macrolet (car symmac) (cdr symmac))))
+        (extend walk-env :macrolet (car mac) (cdr mac)))
+      (dolist (smac (lexical-symbol-macros lexical-env))
+        (extend walk-env :symbol-macrolet (car smac) (cdr smac))))
     (cons walk-env lexical-env)))
 
 (defun register-walk-env (env type name datum &rest other-datum)
   (let ((walk-env (register (car env) type name datum))
-	(lexenv (case type
-		  (:let (augment-with-variable (cdr env) name))
-		  (:macrolet (augment-with-macro (cdr env) name datum))
-		  (:flet (augment-with-function (cdr env) name))
-		  (:symbol-macrolet (augment-with-symbol-macro (cdr env) name datum))
-		  ;;TODO: :declare
-		  (t (cdr env)))))
+        (lexenv (case type
+                  (:let (augment-with-variable (cdr env) name))
+                  (:lexical-let (augment-with-variable (cdr env) name))
+                  (:macrolet (augment-with-macro (cdr env) name datum))
+                  (:flet (augment-with-function (cdr env) name))
+                  (:symbol-macrolet (augment-with-symbol-macro (cdr env) name datum))
+                  ;;TODO: :declare
+                  (t (cdr env)))))
     (cons walk-env lexenv)))
 
 (defmacro extend-walk-env (env type name datum &rest other-datum)
@@ -78,15 +81,15 @@
   (if (atom form)
       (gethash '+atom-marker+ *walker-handlers*)
       (aif (gethash (car form) *walker-handlers*)
-	   it
-	   (case (car form)
-	     ((block declare flet function go if labels let let*
-		     macrolet progn quote return-from setq symbol-macrolet
-		     tagbody unwind-protect catch multiple-value-call
-		     multiple-value-prog1 throw load-time-value the
-		     eval-when locally progv)
-	      (error "Sorry, No walker for the special operater ~S defined." (car form)))
-	     (t (gethash 'application *walker-handlers*))))))
+           it
+           (case (car form)
+             ((block declare flet function go if labels let let*
+                     macrolet progn quote return-from setq symbol-macrolet
+                     tagbody unwind-protect catch multiple-value-call
+                     multiple-value-prog1 throw load-time-value the
+                     eval-when locally progv)
+              (error "Sorry, No walker for the special operater ~S defined." (car form)))
+             (t (gethash 'application *walker-handlers*))))))
 
 (defmacro defwalker-handler (name (form parent lexical-env)
                              &body body)
@@ -145,9 +148,9 @@
                     ,@body))))
 
 (defun split-body (body env &key parent (docstring t) (declare t))
-  (let ((documentation nil) 
-	(newdecls nil)
-	(decls nil))
+  (let ((documentation nil)
+        (newdecls nil)
+        (decls nil))
     (flet ((done ()
              (return-from split-body (values body env documentation (nreverse decls)))))
       (loop
@@ -159,7 +162,7 @@
                         (let ((declarations (rest form)))
                           (dolist* (dec declarations)
                             (multiple-value-setf (env newdecls) (parse-declaration dec env parent))
-			    (setf decls (append newdecls decls))))
+                            (setf decls (append newdecls decls))))
                         ;; source code, all done
                         (done)))
               (string (if docstring
@@ -217,70 +220,71 @@
   ())
 
 (defun parse-declaration (declaration environment parent)
-  (let ((declares nil))
+  (let (declares)
     (flet ((funname (form)
-	     (if (and (consp form) (eql (car form) 'function))
-		 (cadr form)
-		 nil)))
+             (if (and (consp form) (eql (car form) 'function))
+                 (cadr form)
+                 nil)))
       (macrolet ((mkdecl (varname formclass &rest rest)
-		   `(make-instance ,formclass :parent parent :source (list type ,varname) ,@rest))		 
-		 (extend-env ((var list) newdeclare &rest datum)
-		   `(dolist (,var ,list)
-		      (when ,newdeclare (push ,newdeclare declares))
+                   `(make-instance ,formclass :parent parent :source (list type ,varname) ,@rest))
+                 (extend-env ((var list) newdeclare &rest datum)
+                   `(dolist (,var ,list)
+                      (when ,newdeclare
+                        (push ,newdeclare declares))
                       (extend-walk-env environment :declare ,@datum))))
-	(destructuring-bind (type &rest arguments)
-	    declaration
-	  (case type
-	    (dynamic-extent
-	     (extend-env (var arguments)
-			 (mkdecl var 'dynamic-extent-declaration-form :name var) 
-			 var `(dynamic-extent)))        
-	    (ftype
-	     (extend-env (function-name (cdr arguments))
-			 (make-instance 'ftype-declaration-form 
-					:parent parent
-					:source `(ftype ,(first arguments) function-name)
-					:name function-name
-					:type-form (first arguments))
-			 function-name `(ftype ,(first arguments))))
-	    ((ignore ignorable)
-	     (extend-env (var arguments)
-			 (aif (funname var)
-			      (mkdecl var 'function-ignorable-declaration-form :name it)
-			      (mkdecl var 'variable-ignorable-declaration-form :name var))
-			 var `(ignorable)))
-	    (inline
-	      (extend-env (function arguments) 
-			  (mkdecl function 'function-ignorable-declaration-form :name function)
-			  function `(ignorable)))
-	    (notinline
-	     (extend-env (function arguments)
-			 (mkdecl function 'notinline-declaration-form :name function)
-			 function `(notinline)))
-	    (optimize
-	     (extend-env (optimize-spec arguments) 
-			 (mkdecl optimize-spec 'optimize-declaration-form :optimize-spec optimize-spec)
-			 'optimize optimize-spec))
-	    (special
-	     (extend-env (var arguments) 
-			 (mkdecl var 'special-declaration-form :name var)
-			 var `(special)))
-	    (type
-	     (extend-env (var (rest arguments))
-			 (make-instance 'type-declaration-form 
-					:parent parent
-					:source `(type ,(first arguments) ,var)
-					:name var
-					:type-form (first arguments))
-			 var `(type ,(first arguments))))
-	    (t
-	     (extend-env (var arguments)
-			 (make-instance 'type-declaration-form 
-					:parent parent
-					:source `(,type ,var)
-					:name var
-					:type-form type)
-			 var `(type ,type)))))))
+        (destructuring-bind (type &rest arguments)
+            declaration
+          (case type
+            (dynamic-extent
+             (extend-env (var arguments)
+                         (mkdecl var 'dynamic-extent-declaration-form :name var)
+                         var `(dynamic-extent)))
+            (ftype
+             (extend-env (function-name (cdr arguments))
+                         (make-instance 'ftype-declaration-form
+                                        :parent parent
+                                        :source `(ftype ,(first arguments) function-name)
+                                        :name function-name
+                                        :type-form (first arguments))
+                         function-name `(ftype ,(first arguments))))
+            ((ignore ignorable)
+             (extend-env (var arguments)
+                         (aif (funname var)
+                              (mkdecl var 'function-ignorable-declaration-form :name it)
+                              (mkdecl var 'variable-ignorable-declaration-form :name var))
+                         var `(ignorable)))
+            (inline
+             (extend-env (function arguments)
+                         (mkdecl function 'function-ignorable-declaration-form :name function)
+                         function `(ignorable)))
+            (notinline
+             (extend-env (function arguments)
+                         (mkdecl function 'notinline-declaration-form :name function)
+                         function `(notinline)))
+            (optimize
+             (extend-env (optimize-spec arguments)
+                         (mkdecl optimize-spec 'optimize-declaration-form :optimize-spec optimize-spec)
+                         'optimize optimize-spec))
+            (special
+             (extend-env (var arguments)
+                         (mkdecl var 'special-declaration-form :name var)
+                         var `(special)))
+            (type
+             (extend-env (var (rest arguments))
+                         (make-instance 'type-declaration-form
+                                        :parent parent
+                                        :source `(type ,(first arguments) ,var)
+                                        :name var
+                                        :type-form (first arguments))
+                         var `(type ,(first arguments))))
+            (t
+             (extend-env (var arguments)
+                         (make-instance 'type-declaration-form
+                                        :parent parent
+                                        :source `(,type ,var)
+                                        :name var
+                                        :type-form type)
+                         var `(type ,type)))))))
     (when (null declares)
       (setq declares (list (make-instance 'declaration-form :parent parent :source declaration))))
     (values environment declares)))
@@ -364,33 +368,35 @@
 
 (defwalker-handler application (form parent env)
   (block nil
-    (destructuring-bind (op &rest args)
-        form
+    (destructuring-bind (op &rest args) form
       (when (and (consp op)
                  (eq 'cl:lambda (car op)))
-        (return
-          (with-form-object (application lambda-application-form :parent parent :source form)
-            (setf (operator application) (walk-form op application env)
-                  (arguments application) (mapcar (lambda (form)
-                                                    (walk-form form application env))
-                                                  args)))))
+        (return (with-form-object (application lambda-application-form
+                                               :parent parent :source form)
+                  (setf (operator application) (walk-form op application env)
+                        (arguments application)
+                        (mapcar (lambda (form)
+                                  (walk-form form application env))
+                                args)))))
       (when (lookup-walk-env env :macrolet op)
-        (return (walk-form (funcall (lookup-walk-env env :macrolet op) form (cdr env)) parent env)))
+        (return (walk-form (funcall (lookup-walk-env env :macrolet op)
+                                    form (cdr env)) parent env)))
       (when (and (symbolp op) (macro-function op))
-	(multiple-value-bind (expansion expanded)
-	    (macroexpand-1 form (cdr env))
-	  (when expanded
-	    (return (walk-form expansion parent env)))))
-      (let ((app (if (lookup-walk-env env :flet op)
-                     (make-instance 'local-application-form :code (lookup-walk-env env :flet op))
-                     (if (lookup-walk-env env :lexical-flet op)
-			 (make-instance 'lexical-application-form)
-                         (progn
-                           (when (and *warn-undefined*
-                                      (symbolp op)
-                                      (not (fboundp op)))
-                             (warn 'undefined-function-reference :name op))
-                           (make-instance 'free-application-form))))))
+        (multiple-value-bind (expansion expanded)
+            (macroexpand-1 form (cdr env))
+          (when expanded
+            (return (walk-form expansion parent env)))))
+      (let ((app (cond ((lookup-walk-env env :flet op)
+                        (make-instance 'local-application-form
+                                       :code (lookup-walk-env env :flet op)))
+                       ((lookup-walk-env env :lexical-flet op)
+                        (make-instance 'lexical-application-form))
+                       (t
+                        (when (and *warn-undefined*
+                                   (symbolp op)
+                                   (not (fboundp op)))
+                          (warn 'undefined-function-reference :name op))
+                        (make-instance 'free-application-form)))))
         (setf (operator app) op
               (parent app) parent
               (source app) form
@@ -428,8 +434,8 @@
       (make-instance (if (lookup-walk-env env :flet (second form))
                          'local-function-object-form
                          (if (lookup-walk-env env :lexical-flet (second form))
-			     'lexical-function-object-form
-			     'free-function-object-form))
+                             'lexical-function-object-form
+                             'free-function-object-form))
                      :name (second form)
                      :parent parent :source form)))
 
@@ -502,7 +508,7 @@
   (make-instance 'specialized-function-argument-form
                  :name (if (listp form)
                            (first form)
-                           form) 
+                           form)
                  :specializer (if (listp form)
                                   (second form)
                                   'T)
@@ -667,14 +673,14 @@
          finally (setf (binds flet) bindings))
       ;;;; walk the body in the new env
       (multiple-value-setf ((body flet) nil (declares flet))
-			   (walk-implict-progn flet
-					       body
-					       (loop
-						  with env = env
-						  for (name . lambda) in (binds flet)
-						  do (extend-walk-env env :flet name lambda)
-						  finally (return env))
-					       :declare t)))))
+        (walk-implict-progn flet
+                            body
+                            (loop
+                               with env = env
+                               for (name . lambda) in (binds flet)
+                               do (extend-walk-env env :flet name lambda)
+                               finally (return env))
+                            :declare t)))))
 
 (defwalker-handler labels (form parent env)
   (destructuring-bind (binds &body body)
@@ -702,7 +708,7 @@
          for tmp-lambda = (walk-lambda `(lambda ,arguments ,@body) labels env)
          do (setf (body lambda) (body tmp-lambda)
                   (arguments lambda) (arguments tmp-lambda)
-		  (declares lambda) (declares tmp-lambda)))
+                  (declares lambda) (declares tmp-lambda)))
       (multiple-value-setf ((body labels) nil (declares labels)) (walk-implict-progn labels body env :declare t)))))
 
 ;;;; LET/LET*
@@ -715,20 +721,22 @@
 
 (defwalker-handler let (form parent env)
   (with-form-object (let let-form :parent parent :source form)
-    (setf (binds let) (mapcar (lambda (binding)
-                                   (destructuring-bind (var &optional initial-value)
-                                       (ensure-list binding)
-                                     (cons var (walk-form initial-value let env))))
-                                 (second form)))
+    (setf (binds let)
+          (mapcar (lambda (binding)
+                    (destructuring-bind (var &optional initial-value)
+                        (ensure-list binding)
+                      (cons var (walk-form initial-value let env))))
+                  (second form)))
     (multiple-value-bind (b e d declarations)
         (split-body (cddr form) env :parent let :declare t)
       (declare (ignore b e d))
       (dolist* ((var . value) (binds let))
         (declare (ignore value))
-        (if (not (find-if (lambda (declaration)
-                            (and (typep declaration 'special-declaration-form)
-                                 (eq var (name declaration)))) declarations))
-            (extend-walk-env env :let var :dummy)))
+        (unless (find var (remove-if-not (lambda (declaration)
+                                           (typep declaration 'special-declaration-form))
+                                         declarations)
+                      :test #'eq :key #'name)
+          (extend-walk-env env :let var :dummy)))
       (multiple-value-setf ((body let) nil (declares let))
                            (walk-implict-progn let (cddr form) env :declare t)))))
 
@@ -737,11 +745,13 @@
 
 (defwalker-handler let* (form parent env)
   (with-form-object (let* let*-form :parent parent :source form :binds '())
-    (dolist* ((var &optional initial-value) (mapcar #'ensure-list (second form)))
+    (dolist* ((var &optional initial-value)
+              (mapcar #'ensure-list (second form)))
       (push (cons var (walk-form initial-value let* env)) (binds let*))
       (extend-walk-env env :let var :dummy))
     (setf (binds let*) (nreverse (binds let*)))
-    (multiple-value-setf ((body let*) nil (declares let*)) (walk-implict-progn let* (cddr form) env :declare t))))
+    (multiple-value-setf ((body let*) nil (declares let*))
+                         (walk-implict-progn let* (cddr form) env :declare t))))
 
 ;;;; LOAD-TIME-VALUE
 
@@ -813,7 +823,7 @@
   (with-form-object (progn progn-form :parent parent :source form)
     (setf (body progn) (walk-implict-progn progn (cdr form) env))))
 
-;;;; PROGV 
+;;;; PROGV
 
 (defclass progv-form (form implicit-progn-mixin)
   ((vars-form :accessor vars-form :initarg :vars-form)
@@ -821,7 +831,7 @@
 
 (defwalker-handler progv (form parent env)
   (with-form-object (progv progv-form :parent parent :source form)
-    (setf (vars-form progv) (walk-form (cadr form) progv env))    
+    (setf (vars-form progv) (walk-form (cadr form) progv env))
     (setf (values-form progv) (walk-form (caddr form) progv env))
     (setf (body progv) (walk-implict-progn progv (cdddr form) env))
     progv))
@@ -972,15 +982,15 @@
   (walk-form (third form) parent env))
 
 ;; Copyright (c) 2005-2006, Edward Marco Baringer
-;; All rights reserved. 
-;; 
+;; All rights reserved.
+;;
 ;; Redistribution and use in source and binary forms, with or without
 ;; modification, are permitted provided that the following conditions are
 ;; met:
-;; 
+;;
 ;;  - Redistributions of source code must retain the above copyright
 ;;    notice, this list of conditions and the following disclaimer.
-;; 
+;;
 ;;  - Redistributions in binary form must reproduce the above copyright
 ;;    notice, this list of conditions and the following disclaimer in the
 ;;    documentation and/or other materials provided with the distribution.
@@ -988,7 +998,7 @@
 ;;  - Neither the name of Edward Marco Baringer, nor BESE, nor the names
 ;;    of its contributors may be used to endorse or promote products
 ;;    derived from this software without specific prior written permission.
-;; 
+;;
 ;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
