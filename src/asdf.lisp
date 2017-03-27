@@ -32,25 +32,10 @@
 ;;;; NB: Unlike the CLEAN-OP this is experimental (its now to have
 ;;;; problems on multiple systems with non-trivial dependencies).
 
-(defun make-single-fasl (system-name
-                         &key (op (make-instance 'asdf:load-op))
-                              output-file)
-  (let* ((system (asdf:find-system system-name))
-         (steps (asdf::traverse op system))
-         (output-file (or output-file
-                          (compile-file-pathname
-                           (make-pathname
-                            :name (asdf:component-name system)
-                            :defaults (asdf:component-pathname system)))))
-         (*buffer* (make-array 4096 :element-type '(unsigned-byte 8)
-                                    :adjustable t)))
-    (declare (special *buffer*))
-    (with-output-to-file (*fasl* output-file
-                          :if-exists :error
-                          :element-type '(unsigned-byte 8))
-      (declare (special *fasl*))
-      (dolist (s steps)
-        (process-step (car s) (cdr s) output-file)))))
+(defun make-single-fasl (system-name &key output-file)
+  (asdf:operate 'asdf:compile-bundle-op system-name)
+  (when output-file
+    (uiop:copy-file (first (asdf:input-files 'asdf:compile-bundle-op system-name)) output-file)))
 
 (defgeneric process-step (op comp output-file))
 

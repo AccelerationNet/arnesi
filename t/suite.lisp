@@ -7,7 +7,8 @@
         :it.bese.arnesi
         :it.bese.FiveAM))
 
-(unless (5am:get-test :it.bese)
-  (5am:def-suite :it.bese))
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  (unless (5am:get-test :it.bese)
+    (5am:def-suite :it.bese)))
 
 (5am:def-suite :it.bese.arnesi :in :it.bese)

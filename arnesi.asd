@@ -1,20 +1,12 @@
 ;;; -*- lisp -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (find-package :it.bese.arnesi.system)
-    (defpackage :it.bese.arnesi.system
-      (:documentation "ASDF System package for ARNESI.")
-      (:use :common-lisp :asdf))))
-
-(in-package :it.bese.arnesi.system)
-
-(defsystem :arnesi
+(defsystem "arnesi"
   :components ((:static-file "arnesi.asd")
-               (:module :src
+               (:module "src"
                 :components ((:file "asdf" :depends-on ("packages" "io"))
                              (:file "csv" :depends-on ("packages" "string"))
                              (:file "compat" :depends-on ("packages"))
-                             (:module :call-cc
+                             (:module "call-cc"
                               :components ((:file "interpreter")
                                            (:file "handlers")
                                            (:file "apply")
@@ -53,13 +45,14 @@
 			     (:file "unwalk" :depends-on ("packages" "walk"))
                              (:file "vector" :depends-on ("packages" "flow-control"))
                              (:file "walk" :depends-on ("packages" "list" "mopp" "lexenv" "one-liners")))))
-  :depends-on (:collectors)
-  :properties ((:features "v1.4.0" "v1.4.1" "v1.4.2" "cc-interpreter"
-                          "join-strings-return-value" "getenv")))
+  ;; :properties ((:features "v1.4.0" "v1.4.1" "v1.4.2" "cc-interpreter" "join-strings-return-value" "getenv"))
+  :depends-on ("collectors")
+  :in-order-to ((test-op (test-op "arnesi/test"))))
 
-(defsystem :arnesi.test
-  :components ((:module :t
-		:components ((:file "call-cc" :depends-on ("suite"))
+(defsystem "arnesi/test"
+  :components ((:module "t"
+		:components ((:file "accumulation" :depends-on ("suite"))
+                             (:file "call-cc" :depends-on ("suite"))
                              (:file "http" :depends-on ("suite"))
                              (:file "log" :depends-on ("suite"))
                              (:file "matcher" :depends-on ("suite"))
@@ -73,26 +66,18 @@
 			     (:file "walk" :depends-on ("suite"))
 			     (:file "csv" :depends-on ("suite"))
                              (:file "suite"))))
-  :depends-on (:arnesi :FiveAM)
-  :in-order-to ((compile-op (load-op :arnesi))))
+  :depends-on ("arnesi" "fiveam")
+  :perform (test-op (o c) (symbol-call :it.bese.FiveAM :run!) :it.bese.arnesi))
 
-(defsystem :arnesi.cl-ppcre-extras
-  :components ((:module :src
+(defsystem "arnesi/cl-ppcre-extras"
+  :components ((:module "src"
                 :components ((:file "cl-ppcre-extras"))))
-  :depends-on (:cl-ppcre :arnesi))
+  :depends-on ("cl-ppcre" "arnesi"))
 
-(defsystem :arnesi.slime-extras
-  :components ((:module :src :components ((:file "slime-extras"))))
-  :depends-on (:arnesi :swank))
+(defsystem "arnesi/slime-extras"
+  :components ((:module "src" :components ((:file "slime-extras"))))
+  :depends-on ("arnesi" "swank"))
 
-(defmethod perform ((op asdf:test-op) (system (eql (find-system :arnesi))))
-  (asdf:oos 'asdf:load-op :arnesi.test)
-  (asdf:oos 'asdf:load-op :collectors)
-  (funcall (intern (string :run!) (string :it.bese.FiveAM))
-           :it.bese.arnesi))
-
-(defmethod operation-done-p ((op test-op) (system (eql (find-system :arnesi))))
-  nil)
 
 ;;;; * Introduction
 
