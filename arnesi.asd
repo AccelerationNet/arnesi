@@ -67,7 +67,8 @@
 			     (:file "csv" :depends-on ("suite"))
                              (:file "suite"))))
   :depends-on ("arnesi" "fiveam")
-  :perform (test-op (o c) (symbol-call :it.bese.FiveAM :run!) :it.bese.arnesi))
+  :perform (test-op (o c)
+                    (eval "(5am:run! :it.bese.arnesi)")))
 
 (defsystem "arnesi/cl-ppcre-extras"
   :components ((:module "src"

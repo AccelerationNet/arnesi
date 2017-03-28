@@ -9,7 +9,7 @@
 
 (test make-reducer
 
-  (let ((r (make-reducer #'+ 0)))
+  (let ((r (make-reducer #'+ :initial-value 0)))
     (funcall r 0)
     (funcall r 1 2)
     (funcall r 1 2 3)
