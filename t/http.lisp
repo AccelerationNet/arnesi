@@ -8,7 +8,7 @@
 (in-suite :it.bese.arnesi.http)
 
 (test escape-uri
-  (for-all ((uri (gen-string :elements (gen-character :code-limit #16rffff))))
+  (for-all ((uri (gen-string :elements (gen-character :code-limit 16383))))
     (is (string= uri (unescape-as-uri (escape-as-uri uri)))))
 
   (is (string= (unescape-as-uri "a+b+c")

@@ -474,16 +474,23 @@
   (let ((body-without-stop `(,name nil))
         (body-with-stop `(,name t)))
     `(test ,name
-      (is (= 1 (with-call/cc ,body-without-stop)))
-      (signals unbound-variable
+      (handler-case
+          (is (= 1 (with-call/cc ,body-without-stop))
+              "shouldnt be unbound in body-without-stop")
+        (unbound-variable ()
+          (error "shouldnt be unbound in body-without-stop ~A" ',body-without-stop)))
+      (signals (unbound-variable "should be unbound lookup-special-in-lisp")
         (with-call/cc ,body-without-stop (lookup-special-in-lisp)))
-      (signals unbound-variable
+      (signals (unbound-variable  "should be unbound (lookup-special-in-defun/cc nil)")
         (with-call/cc ,body-without-stop (lookup-special-in-defun/cc nil)))
       ;; now stop once
-      (is (= 1 (kall (with-call/cc ,body-with-stop))))
-      (signals unbound-variable
+      (handler-case (is (= 1 (kall (with-call/cc ,body-with-stop)))
+                        "shouldnt be unbound in kall body-with-stop")
+        (unbound-variable ()
+          (error "shouldnt be unbound in body-without-stop ~A" ',body-with-stop)))
+      (signals (unbound-variable "should be unbound (lookup-special-in-lisp)")
         (kall (with-call/cc ,body-with-stop (lookup-special-in-lisp))))
-      (signals unbound-variable
+      (signals (unbound-variable "should be unbound (lookup-special-in-defun/cc nil)")
         (kall (with-call/cc ,body-with-stop (lookup-special-in-defun/cc nil)))))))
 
 ;; export and lookup in the same lexical environment
