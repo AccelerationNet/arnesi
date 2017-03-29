@@ -3,7 +3,7 @@
 (defsystem "arnesi"
   :author "Edward Marco Baringer"
   :description "A bag-of-tools utilities library used to aid in implementing the bese.it toolkit"
-  :licence "BSD"
+  :license "BSD"
   :version "2.0"
   :components ((:static-file "arnesi.asd")
                (:module "src"
@@ -56,7 +56,7 @@
 (defsystem "arnesi/test"
   :author "Edward Marco Baringer"
   :description "Tests for arnesi"
-  :licence "BSD"
+  :license "BSD"
   :version "2.0"
   :components ((:module "t"
 		:components ((:file "accumulation" :depends-on ("suite"))
