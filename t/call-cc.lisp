@@ -382,7 +382,7 @@
                  (values -1)
                  (values 1 2))))))
 
-;;; speical variable handling
+;;; special variable handling
 (defun/cc lookup-special-in-defun/cc (stop)
   (declare (special var))
   (when stop (let/cc k k))
@@ -476,9 +476,9 @@
     `(test ,name
       (handler-case
           (is (= 1 (with-call/cc ,body-without-stop))
-              "shouldnt be unbound in body-without-stop")
+              "shouldn't be unbound in body-without-stop")
         (unbound-variable ()
-          (error "shouldnt be unbound in body-without-stop ~A" ',body-without-stop)))
+          (error "shouldn't be unbound in body-without-stop ~A" ',body-without-stop)))
       (signals (unbound-variable "should be unbound lookup-special-in-lisp")
         (with-call/cc ,body-without-stop (lookup-special-in-lisp)))
       (signals (unbound-variable  "should be unbound (lookup-special-in-defun/cc nil)")
