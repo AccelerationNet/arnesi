@@ -13,8 +13,9 @@
   #+lispworks (lw:environment-variable var)
   #+openmcl (ccl::getenv var)
   #+sbcl (sb-ext:posix-getenv var)
+  #+abcl (ext:getenv var)
 
-  #-(or allegro clisp cmu lispworks openmcl openmcl sbcl)
+  #-(or allegro clisp cmu lispworks openmcl openmcl sbcl abcl)
   (error "Could not define `getenv'."))
 
 

@@ -23,7 +23,7 @@ Implementation Notes:
 
 1) The mopp package also exports the function
    SLOT-DEFINITION-DOCUMENTATION which while not strictly part of
-   the MOP specification really should be and is implementened on
+   the MOP specification really should be and is implemented on
    most systems.
 
 2) On Lispworks (tested only lightly) the MOPP package
@@ -145,8 +145,8 @@ Implementation Notes:
 
 SYMBOL - One of the external symbols of the package it.bese.arnesi.mopp
 
-IMPLEMENTATION - A keyword indetifying the implementation, one
-of: :OPENMCL, :SBCL, :CMU, :LISPWORKS, :ALLEGRO.
+IMPLEMENTATION - A keyword identifying the implementation, one
+of: :OPENMCL, :SBCL, :CMU, :LISPWORKS, :CLISP, :ALLEGRO, :ABCL.
 
 Do \"something\" such that the external symbol SYMBOL in the mopp
 package provides the sematics for the like named symbol in the
@@ -276,6 +276,12 @@ object wrapping OBJECT."
 (defun mopp:slot-definition-documentation (slot)
   (documentation slot t))
 
+;;;; ABCL
+
+(defmethod provide-mopp-symbol ((symbol symbol) (implementation (eql :abcl)))
+  (when (find-symbol (string symbol) :mop)
+    (import-to-mopp (find-symbol (string symbol) :mop))))
+
 ;;;; ** Building the MOPP package
 
 ;;;; we can't just do a do-external-symbols since we mess with the
@@ -289,7 +295,8 @@ object wrapping OBJECT."
    cmu
    lispworks
    clisp
-   allegro)
+   allegro
+   abcl)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew 'mopp::have-mop *features*))
 
@@ -303,7 +310,8 @@ object wrapping OBJECT."
                                      #+cmu :cmu
                                      #+lispworks :lispworks
                                      #+clisp :clisp
-				     #+allegro :allegro)
+                                     #+allegro :allegro
+                                     #+abcl :abcl)
       (warn "Unimplemented MOP symbol: ~S" sym))))
 
 #-mopp::have-mop
