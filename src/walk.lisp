@@ -30,6 +30,7 @@
     (cons walk-env lexical-env)))
 
 (defun register-walk-env (env type name datum &rest other-datum)
+  (declare (ignore other-datum))
   (let ((walk-env (register (car env) type name datum))
         (lexenv (case type
                   (:let (augment-with-variable (cdr env) name))
@@ -453,6 +454,7 @@
     func))
 
 (defun walk-lambda-list (lambda-list parent env &key allow-specializers macro-p)
+  (declare (ignore macro-p))
   (flet ((extend-env (argument)
            (unless (typep argument 'allow-other-keys-function-argument-form)
              (extend-walk-env env :let (name argument) argument))))
@@ -954,23 +956,6 @@
                                     :source form)
     (setf (protected-form unwind-protect) (walk-form (second form) unwind-protect env)
           (cleanup-form unwind-protect) (walk-implict-progn unwind-protect (cddr form) env))))
-
-;;;; LOAD-TIME-VALUE
-
-(defclass load-time-value-form (form)
-  ((body :accessor body :initarg :body)
-   (read-only :initform nil :accessor read-only-p :initarg :read-only)
-   (value :accessor value)))
-
-(defmethod initialize-instance :after ((self load-time-value-form) &key)
-  (setf (value self) (eval (body self))))
-
-(defwalker-handler load-time-value (form parent env)
-  (assert (<= (length form) 3))
-  (with-form-object (load-time-value load-time-value-form :parent parent
-                                     :body form
-                                     :read-only (third form))
-    (setf (body load-time-value) (second form))))
 
 
 ;;;; ** Implementation specific walkers

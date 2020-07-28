@@ -14,7 +14,8 @@
   #+(or cmu allegro) (declare (ignore exit-code))
   #+cmu (ext:quit)
   #+lispworks (lispworks:quit :status exit-code)
-  #+allegro (excl:exit))
+  #+allegro (excl:exit)
+  #+abcl (ext:exit :status exit-code))
 
 ;; Copyright (c) 2002-2003, Edward Marco Baringer
 ;; All rights reserved. 

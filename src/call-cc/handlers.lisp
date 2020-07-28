@@ -233,6 +233,7 @@
         (setf (symbol-value var) value)
         (multiple-value-bind (dummies vals new setter getter)
             (get-setf-expansion var)
+          (declare (ignore getter))
           (funcall (compile nil
                             `(lambda ()
                                (let* (,@(mapcar #'list dummies vals)

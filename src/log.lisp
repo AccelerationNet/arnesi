@@ -174,6 +174,7 @@
   (:documentation "Message is either a string or a list. When it's a list and the first element is a string then it's processed as args to cl:format."))
 
 (defmethod handle :around ((cat log-category) message level)
+  (declare (ignore message level))
   ;; turn off line wrapping for the entire time while inside the loggers
   (with-logging-io
     (call-next-method)))
@@ -191,6 +192,7 @@
 
 (defgeneric append-message (category log-appender message level)
   (:method :around (category log-appender message level)
+    (declare (ignore category log-appender message level))
     ;; what else should we do?
     (ignore-errors
       (call-next-method))))
