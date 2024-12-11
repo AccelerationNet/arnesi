@@ -972,6 +972,14 @@
                                      :read-only (third form))
     (setf (body load-time-value) (second form))))
 
+;;;; DECLARE
+
+(defclass declare-form (form)
+  ((body :accessor body :initarg :body)))
+
+(defwalker-handler declare (form parent env)
+  (with-form-object
+      (declare declare-form :body form)))
 
 ;;;; ** Implementation specific walkers
 
